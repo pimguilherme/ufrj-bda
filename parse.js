@@ -63,10 +63,22 @@ var saveParsedNode = function (parsedNode, done) {
         parsedNode.branchset && parsedNode.branchset.forEach(function (childParsedNode) {
             total++;
             saveParsedNode(childParsedNode, function (childNode) {
-                node.createRelationshipTo(childNode, 'CHILD', {length:childParsedNode.length}, function () {
+                node.createRelationshipTo(childNode, 'CHILD', {length:childParsedNode.length}, function (err) {
+                    if (err) error('Failed to create relationship', err, parsedNode, childNode)
                     next()
                 })
             })
+        })
+
+        // Adds the node to a generic index of nodes
+        total += 2;
+        node.index('all', 'name', parsedNode.name || '', function (err) {
+            if (err) error('Failed to create a generic name index for a node', err, parsedNode, parsedNode.name)
+            next()
+        })
+        node.index('all', 'bootstrap', parsedNode.bootstrap || null, function (err) {
+            if (err) error('Failed to create a generic bootstrap index for a node', err, parsedNode, parsedNode.bootstrap)
+            next()
         })
 
         // If there are no pending requests above, we are done
@@ -75,8 +87,14 @@ var saveParsedNode = function (parsedNode, done) {
     })
 }
 
+var rootParsed = tree.parsed
 // Overriding the tree's root name, to reflect the name we have given
-tree.parsed.name = tree.name;
-saveParsedNode(tree.parsed, function (root) {
-    console.log('Everything has been saved!', JSON.stringify(root, null, 4));
+rootParsed.name = tree.name;
+saveParsedNode(rootParsed, function (root) {
+
+    // The root node is added to an index of trees
+    root.index('roots', 'name', rootParsed.name, function (err) {
+        if (err) error('Failed to create a generic index for the root node', rootParsed, rootParsed.name)
+        console.log('Everything has been saved!', JSON.stringify(root, null, 4));
+    })
 })

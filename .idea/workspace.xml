@@ -22,19 +22,19 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="parse.js" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="parse.js" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/parse.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="36" column="3" selection-start="985" selection-end="985" vertical-scroll-proportion="0.0">
+            <state line="89" column="28" selection-start="2844" selection-end="2844" vertical-scroll-proportion="0.7562297">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="package.json" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="package.json" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/package.json">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="4" column="22" selection-start="86" selection-end="86" vertical-scroll-proportion="0.06410257">
+            <state line="4" column="22" selection-start="86" selection-end="86" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -64,8 +64,8 @@
         <option value="$PROJECT_DIR$/package.json.js" />
         <option value="$PROJECT_DIR$/newick-parser.js" />
         <option value="$PROJECT_DIR$/lib/newick.js" />
-        <option value="$PROJECT_DIR$/parse.js" />
         <option value="$PROJECT_DIR$/package.json" />
+        <option value="$PROJECT_DIR$/parse.js" />
       </list>
     </option>
   </component>
@@ -303,16 +303,16 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/parse.js">
+    <entry file="file://$PROJECT_DIR$/package.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="36" column="3" selection-start="985" selection-end="985" vertical-scroll-proportion="0.0">
+        <state line="4" column="22" selection-start="86" selection-end="86" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/package.json">
+    <entry file="file://$PROJECT_DIR$/parse.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="4" column="22" selection-start="86" selection-end="86" vertical-scroll-proportion="0.06410257">
+        <state line="89" column="28" selection-start="2844" selection-end="2844" vertical-scroll-proportion="0.7562297">
           <folding />
         </state>
       </provider>
