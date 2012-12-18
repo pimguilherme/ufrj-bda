@@ -11,12 +11,11 @@ var error = (function (name) {
     return function (m) {
         throw new Error(name + ": " + m + ' ' + util.inspect(Array.prototype.slice.call(arguments, 1)))
     }
-})('Newick2Neo4j')
+})('Newick2Neo4j Parser')
 
 /**
- * CLI handler
+ * CLI controller
  */
-
 var cliTreeId = process.argv[2]
     , cliFilepath = process.argv[3]
 
@@ -55,7 +54,7 @@ if (!fs.existsSync(cliFilepath)) {
  */
 var tree = {
     name:cliTreeId,
-    newick:fs.readFileSync(cliFilepath)
+    newick:fs.readFileSync(cliFilepath).toString()
 };
 
 tree.parsed = newick.parse(tree.newick)
@@ -64,10 +63,15 @@ if (!tree.parsed || !tree.parsed.branchset) {
     error('Invalid newick input, couldn\'t parse tree.')
 }
 
+fs.writeFileSync('test.json', JSON.stringify(tree.parsed, null, 4))
+
+
 /**
  * Neo4j representation of our tree
  */
-var db = new neo4j.GraphDatabase('http://localhost:7474')
+var
+    NEO4J_PATH = process.env.SCY_NEO4J_PATH || 'http://localhost:7474'
+    , db = new neo4j.GraphDatabase(NEO4J_PATH)
 
 // Recursive function to save a parsed newick node into Neo4j
 var saveParsedNode = function (parsedNode, done) {
@@ -122,15 +126,21 @@ var saveParsedNode = function (parsedNode, done) {
 var rootParsed = tree.parsed
 // Overriding the tree's root name, to reflect the name we have given
 rootParsed.name = tree.name;
-saveParsedNode(rootParsed, function (root) {
-    // We'll add the newick representation of the tree to the root, maybe it's useful later
-    root.data.newick = tree.newick
-    root.save(function (err) {
-        if (err) error('Couldn\'t append the newick seed to the root')
-        // The root node is added to an index of trees
-        root.index('roots', 'name', rootParsed.name, function (err) {
-            if (err) error('Failed to create a generic index for the root node', rootParsed, rootParsed.name)
-            console.log('Everything has been saved!', JSON.stringify(root, null, 4));
+
+
+// Verifies if the database is up and running
+db.getVersion(function (err, v) {
+    if (err) error('Couldn\'t connect to Neo4j at ' + NEO4J_PATH)
+    saveParsedNode(rootParsed, function (root) {
+        // We'll add the newick representation of the tree to the root, maybe it's useful later
+        root.data.newick = tree.newick
+        root.save(function (err) {
+            if (err) error('Couldn\'t append the newick seed to the root')
+            // The root node is added to an index of trees
+            root.index('roots', 'name', rootParsed.name, function (err) {
+                if (err) error('Failed to create a generic index for the root node', rootParsed, rootParsed.name)
+                console.log('Everything has been saved!', JSON.stringify(root, null, 4));
+            })
         })
     })
 })
