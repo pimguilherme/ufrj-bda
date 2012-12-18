@@ -7,11 +7,9 @@ var
 /**
  * Helpers
  */
-var error = (function (name) {
-    return function (m) {
-        throw new Error(name + ": " + m + ' ' + util.inspect(Array.prototype.slice.call(arguments, 1)))
-    }
-})('Newick2Neo4j Parser')
+var error = function (m) {
+    throw new Error("[ERROR] " + m + ' ' + util.inspect(Array.prototype.slice.call(arguments, 1)))
+}
 
 /**
  * CLI controller
@@ -41,9 +39,12 @@ if (!cliTreeId.length) {
 if (!fs.existsSync(cliFilepath)) {
     console.log(' <filepath> is invalid, file "' + cliFilepath + '" not found.');
     process.exit()
+} else if (!fs.statSync(cliFilepath).isFile()) {
+    console.log(' <filepath> is invalid, "' + cliFilepath + '" is not a file.');
+    process.exit()
 }
 
-
+var initTimestamp = Date.now() / 1000
 /**
  * Tree parsing..
  *
@@ -57,14 +58,12 @@ var tree = {
     newick:fs.readFileSync(cliFilepath).toString()
 };
 
-tree.parsed = newick.parse(tree.newick)
+var parsingInfo = {}
+tree.parsed = newick.parse(tree.newick, parsingInfo)
 // Oops, don't know what to do!
 if (!tree.parsed || !tree.parsed.branchset) {
     error('Invalid newick input, couldn\'t parse tree.')
 }
-
-fs.writeFileSync('test.json', JSON.stringify(tree.parsed, null, 4))
-
 
 /**
  * Neo4j representation of our tree
@@ -72,66 +71,87 @@ fs.writeFileSync('test.json', JSON.stringify(tree.parsed, null, 4))
 var
     NEO4J_PATH = process.env.SCY_NEO4J_PATH || 'http://localhost:7474'
     , db = new neo4j.GraphDatabase(NEO4J_PATH)
+// Variable to keep some progress tracking
+    , progressInfo = {
+        current:0,
+        total:parsingInfo.nodes
+    }
 
+
+var
 // Recursive function to save a parsed newick node into Neo4j
-var saveParsedNode = function (parsedNode, done) {
+    saveParsedNode = function (parsedNode, done) {
 
-    // Neo4j node representation of our parsed node
-    var node = db.createNode({
-        name:parsedNode.name,
-        bootstrap:parsedNode.bootstrap
-    })
+        // Neo4j node representation of our parsed node
+        var node = db.createNode({
+            name:parsedNode.name,
+            bootstrap:parsedNode.bootstrap
+        })
 
-    node.save(function (err) {
-        if (err) error('Couldn\'t save a node', err)
+        node.save(function (err) {
+            if (err) error('Couldn\'t save a node', err)
+            progressInfo.current++;
+            showProgress()
 
-        // Basic async flow control
-        var total = 0
-            , next = function (noDec) {
-                if (!noDec) total--;
-                if (total <= 0) {
-                    // Finally done!
-                    done(node)
+            // Basic async flow control
+            var total = 0
+                , next = function (noDec) {
+                    if (!noDec) total--;
+                    if (total <= 0) {
+                        // Finally done!
+                        done(node)
+                    }
                 }
-            }
 
-        // Children and their relationships with the parent
-        parsedNode.branchset && parsedNode.branchset.forEach(function (childParsedNode) {
-            total++;
-            saveParsedNode(childParsedNode, function (childNode) {
-                node.createRelationshipTo(childNode, 'CHILD', {length:childParsedNode.length}, function (err) {
-                    if (err) error('Failed to create relationship', err, parsedNode, childNode)
-                    next()
+            // Children and their relationships with the parent
+            parsedNode.branchset && parsedNode.branchset.forEach(function (childParsedNode) {
+                total++;
+                saveParsedNode(childParsedNode, function (childNode) {
+                    node.createRelationshipTo(childNode, 'CHILD', {length:childParsedNode.length}, function (err) {
+                        if (err) error('Failed to create relationship', err, parsedNode, childNode)
+                        next()
+                    })
                 })
             })
-        })
 
-        // Adds the node to a generic index of nodes
-        total += 2;
-        node.index('all', 'name', parsedNode.name || '', function (err) {
-            if (err) error('Failed to create a generic name index for a node', err, parsedNode, parsedNode.name)
-            next()
-        })
-        node.index('all', 'bootstrap', parsedNode.bootstrap || null, function (err) {
-            if (err) error('Failed to create a generic bootstrap index for a node', err, parsedNode, parsedNode.bootstrap)
-            next()
-        })
+            // Adds the node to a generic index of nodes
+            total += 2;
+            node.index('all', 'name', parsedNode.name || '', function (err) {
+                if (err) error('Failed to create a generic name index for a node', err, parsedNode, parsedNode.name)
+                next()
+            })
+            node.index('all', 'bootstrap', parsedNode.bootstrap || null, function (err) {
+                if (err) error('Failed to create a generic bootstrap index for a node', err, parsedNode, parsedNode.bootstrap)
+                next()
+            })
 
-        // If there are no pending requests above, we are done
-        next(true)
+            // If there are no pending requests above, we are done
+            next(true)
 
-    })
-}
+        })
+    }
+// Displays the progress in nodes in the console
+    , showProgress = function () {
+        process.stdout.write('\r Nodes evaluated: ' + progressInfo.current + ' of ' + progressInfo.total)
+    }
+// Terminates the progress display process
+    , endProgress = function () {
+        process.stdout.write('\n')
+    }
 
 var rootParsed = tree.parsed
-// Overriding the tree's root name, to reflect the name we have given
+// Overriding the tree's root name, to reflect the name received as <tree_id>
 rootParsed.name = tree.name;
-
 
 // Verifies if the database is up and running
 db.getVersion(function (err, v) {
-    if (err) error('Couldn\'t connect to Neo4j at ' + NEO4J_PATH)
+    if (err) error('Couldn\'t connect to Neo4j at ' + NEO4J_PATH, err)
+
+    showProgress()
+    // And finally initiates our persistence process
     saveParsedNode(rootParsed, function (root) {
+        endProgress()
+
         // We'll add the newick representation of the tree to the root, maybe it's useful later
         root.data.newick = tree.newick
         root.save(function (err) {
@@ -139,8 +159,10 @@ db.getVersion(function (err, v) {
             // The root node is added to an index of trees
             root.index('roots', 'name', rootParsed.name, function (err) {
                 if (err) error('Failed to create a generic index for the root node', rootParsed, rootParsed.name)
-                console.log('Everything has been saved!', JSON.stringify(root, null, 4));
+                console.log(' The tree has been parsed and saved in ' + (Date.now() / 1000 - initTimestamp).toFixed(3) + 's');
             })
         })
+
     })
+
 })
