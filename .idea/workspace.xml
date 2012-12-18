@@ -34,7 +34,7 @@
       <file leaf-file-name="package.json" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/package.json">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="2" column="20" selection-start="35" selection-end="40" vertical-scroll-proportion="0.032051284">
+            <state line="4" column="22" selection-start="86" selection-end="86" vertical-scroll-proportion="0.06410257">
               <folding />
             </state>
           </provider>
@@ -151,7 +151,7 @@
   <component name="PropertiesComponent">
     <property name="options.splitter.main.proportions" value="0.3" />
     <property name="WebServerToolWindowFactoryState" value="true" />
-    <property name="options.lastSelected" value="preferences.externalResources" />
+    <property name="options.lastSelected" value="project.propVCSSupport.Mappings" />
     <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
   </component>
@@ -312,7 +312,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/package.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="2" column="20" selection-start="35" selection-end="40" vertical-scroll-proportion="0.032051284">
+        <state line="4" column="22" selection-start="86" selection-end="86" vertical-scroll-proportion="0.06410257">
           <folding />
         </state>
       </provider>
