@@ -154,12 +154,15 @@ db.getVersion(function (err, v) {
 
         // We'll add the newick representation of the tree to the root, maybe it's useful later
         root.data.newick = tree.newick
+        // And also tell Neo4j when this was generated
+        root.data.timestamp = Date.now()
         root.save(function (err) {
             if (err) error('Couldn\'t append the newick seed to the root')
             // The root node is added to an index of trees
             root.index('roots', 'name', rootParsed.name, function (err) {
                 if (err) error('Failed to create a generic index for the root node', rootParsed, rootParsed.name)
-                console.log(' The tree has been parsed and saved in ' + (Date.now() / 1000 - initTimestamp).toFixed(3) + 's');
+                console.log(' The tree has been parsed and saved in %ss', (Date.now() / 1000 - initTimestamp).toFixed(3));
+                console.log(' The root node is at %s',root.self);
             })
         })
 
