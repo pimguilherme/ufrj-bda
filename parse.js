@@ -91,10 +91,14 @@ var rootParsed = tree.parsed
 // Overriding the tree's root name, to reflect the name we have given
 rootParsed.name = tree.name;
 saveParsedNode(rootParsed, function (root) {
-
-    // The root node is added to an index of trees
-    root.index('roots', 'name', rootParsed.name, function (err) {
-        if (err) error('Failed to create a generic index for the root node', rootParsed, rootParsed.name)
-        console.log('Everything has been saved!', JSON.stringify(root, null, 4));
+    // We'll add the newick representation of the tree to the root, maybe it's useful later
+    root.data.newick = tree.newick
+    root.save(function (err) {
+        if (err) error('Couldn\'t append the newick seed to the root')
+        // The root node is added to an index of trees
+        root.index('roots', 'name', rootParsed.name, function (err) {
+            if (err) error('Failed to create a generic index for the root node', rootParsed, rootParsed.name)
+            console.log('Everything has been saved!', JSON.stringify(root, null, 4));
+        })
     })
 })
