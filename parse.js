@@ -2,6 +2,7 @@ var
     newick = require('./lib/newick')
     , neo4j = require('neo4j')
     , util = require('util')
+    , fs = require('fs')
 
 /**
  * Helpers
@@ -13,16 +14,48 @@ var error = (function (name) {
 })('Newick2Neo4j')
 
 /**
+ * CLI handler
+ */
+
+var cliTreeId = process.argv[2]
+    , cliFilepath = process.argv[3]
+
+// Usage validation
+if (!cliTreeId || !cliFilepath) {
+    console.log('');
+    console.log(' Usage: parse <tree_id> <filepath>')
+    console.log(' --');
+    console.log(' Parameters:');
+    console.log("\t<tree_id> is a string which will identify the parsed tree in Neo4j");
+    console.log("\t<filepath> is the path to a file containing a tree in the NEWICK format");
+    console.log('');
+    process.exit()
+}
+
+// Parameters validation
+cliTreeId = cliTreeId.trim()
+if (!cliTreeId.length) {
+    console.log(' <tree_id> should not be blank.');
+    process.exit()
+}
+
+if (!fs.existsSync(cliFilepath)) {
+    console.log(' <filepath> is invalid, file "' + cliFilepath + '" not found.');
+    process.exit()
+}
+
+
+/**
  * Tree parsing..
  *
  * Here we need a tree which will be identified by its 'name' property, and
- * its structured will be parsed from its Newick representation.
+ * its structure will be parsed from its Newick representation.
  *
  * We'll then proceed to establish the tree in Neo4j.
  */
 var tree = {
-    name:'XXX',
-    newick:'(3:0.22600665976405817648,(2:0.24586044154417141527,(1:0.95659174989638406927,4:0.79869723538484571623)86:0.43223620036001075828)63:0.06949250737937846811,5:0.22062446543725264259);'
+    name:cliTreeId,
+    newick:fs.readFileSync(cliFilepath)
 };
 
 tree.parsed = newick.parse(tree.newick)
@@ -30,7 +63,6 @@ tree.parsed = newick.parse(tree.newick)
 if (!tree.parsed || !tree.parsed.branchset) {
     error('Invalid newick input, couldn\'t parse tree.')
 }
-
 
 /**
  * Neo4j representation of our tree
