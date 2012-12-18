@@ -1,5 +1,7 @@
 {
-  "dependencies": {
-    "neo4j": "~0.2.19"
-  }
+    "name":"bda",
+    "version":"0.0.1",
+    "dependencies":{
+        "neo4j":"~0.2.19"
+    }
 }
